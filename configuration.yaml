@@ -71,6 +71,21 @@ sensor:
           {% else %}
             {{ percentage }}
           {% endif %}
+      water_volume:
+        friendly_name: "Water percentage"
+        unit_of_measurement: 'l'
+        value_template: >-
+          {% set water_tank_height = states('sensor.water_tank_height') | float %}
+          {% set water_tank_sensor_error_adjustment = states('sensor.water_tank_sensor_error_adjustment') | float %}
+          {% set water_level = states('sensor.water_level') | float %}
+          {% set water_tank_cylinder_height = states('sensor.water_tank_cylinder_height') | float %}
+          {% set water_tank_cylinder_radius = states('sensor.water_tank_cylinder_radius') | float %}
+          {% if water_level <= water_tank_cylinder_height %}
+            {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_level %}
+            {{ cylinder_volume / 1000 | round(2) }}
+          {% else %}
+            TODO
+          {% endif %}
   - platform: template
     sensors:
       solar_angle:
@@ -79,10 +94,3 @@ sensor:
         value_template: "{{ state_attr('sun.sun', 'elevation') }}"
       sunrise:
         value_template: "{{ state_attr('sun.sun', 'next_rising') }}"
-
-        #  {% set percentage = (inverse / water_tank_height) * 100 %}
-        #   {% if percentage < 0 %}
-        #     {{ 0.0 }}
-        #   {% else %}
-        #     {{ percentage }}
-        #   {% endif %}
