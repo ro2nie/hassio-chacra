@@ -84,7 +84,13 @@ sensor:
             {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_level %}
             {{ cylinder_volume / 1000 | round(2) }}
           {% else %}
-            TODO
+            {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_tank_cylinder_height %}
+            {% set water_tank_cone_angle = states('sensor.water_tank_cone_angle') | float %}
+            {% set water_height_in_cone = water_tank_height - water_tank_cylinder_height %}
+
+            {% set tan_from_degrees = tan((pi / 180) * water_tank_cone_angle) %}
+            {% set water_level_radius_in_cone = water_tank_cylinder_radius - (water_height_in_cone / tan_from_degrees) %}
+            {{ tan_from_degrees }}
           {% endif %}
   - platform: template
     sensors:
