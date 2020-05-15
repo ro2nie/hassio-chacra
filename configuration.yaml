@@ -71,7 +71,7 @@ sensor:
             {{ percentage }}
           {% endif %}
       water_volume:
-        friendly_name: "Water percentage"
+        friendly_name: "Water volume"
         unit_of_measurement: 'l'
         value_template: >-
           {% set water_level = states('sensor.water_level') | float %}
