@@ -33,6 +33,7 @@ sensor:
     state_topic: "water-tank/level"
     unit_of_measurement: 'dBm'
     value_template: "{{ value_json.rssi }}"
+    icon: mdi:signal-cellular-3
   - platform: mqtt
     name: "sequence"
     state_topic: "water-tank/level"    
@@ -94,7 +95,7 @@ sensor:
             {{ ((cylinder_volume + volume_cone) / 1000) | round(2)}}
           {% endif %}
         icon_template: >-
-          mdi:bucket
+          mdi:water
   - platform: template
     sensors:
       solar_angle:
