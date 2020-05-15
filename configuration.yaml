@@ -16,6 +16,18 @@ script: !include scripts.yaml
 scene: !include scenes.yaml
 
 sensor:
+  - platform: template
+    sensors:
+      water_tank_height:
+        value_template: !secret water_tank_height
+      water_tank_sensor_error_adjustment:
+        value_template: !secret water_tank_sensor_error_adjustment
+      water_tank_cylinder_height:
+        value_template: !secret water_tank_cylinder_height
+      water_tank_cylinder_radius:
+        value_template: !secret water_tank_cylinder_radius
+      water_tank_cone_angle:
+        value_template: !secret water_tank_cone_angle
   - platform: mqtt
     name: "RSSI"
     state_topic: "water-tank/level"
@@ -26,7 +38,25 @@ sensor:
     state_topic: "water-tank/level"    
     value_template: "{{ value_json.sequence }}"
   - platform: mqtt
-    name: "Distance from top"
+    name: "Water distance top"
     state_topic: "water-tank/level"
     unit_of_measurement: 'cm'
     value_template: "{{ value_json.tank }}"
+  - platform: template
+    sensors:
+      water_level:
+        friendly_name: "Water level"
+        unit_of_measurement: 'cm'
+        value_template: "{{ states('sensor.water_tank_height') | float + states('sensor.water_tank_sensor_error_adjustment') | float - states('sensor.water_distance_top') | float }}"
+      water_percentage:
+        friendly_name: "Water percentage"
+        unit_of_measurement: 'cm'
+        value_template: "{{ states('sensor.water_tank_height') | float + states('sensor.water_tank_sensor_error_adjustment') | float - states('sensor.water_distance_top') | float }}"
+  - platform: template
+    sensors:
+      solar_angle:
+        friendly_name: "Sun angle"
+        unit_of_measurement: 'degrees'
+        value_template: "{{ state_attr('sun.sun', 'elevation') }}"
+      sunrise:
+        value_template: "{{ state_attr('sun.sun', 'next_rising') }}"
