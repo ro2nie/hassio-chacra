@@ -56,7 +56,7 @@ sensor:
           {% if water_level < 0 %}
             {{ 0.0 }}
           {% else %}
-            {{ water_level }}
+            {{ water_level | round(2) }}
           {% endif %}
       water_percentage:
         friendly_name: "Water percentage"
@@ -68,7 +68,7 @@ sensor:
           {% if percentage < 0 %}
             {{ 0.0 }}
           {% else %}
-            {{ percentage }}
+            {{ percentage | round(2) }}
           {% endif %}
       water_volume:
         friendly_name: "Water volume"
