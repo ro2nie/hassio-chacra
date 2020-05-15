@@ -72,14 +72,14 @@ sensor:
           {% endif %}
       water_volume:
         friendly_name: "Water volume"
-        unit_of_measurement: 'l'
+        unit_of_measurement: 'litres'
         value_template: >-
           {% set water_level = states('sensor.water_level') | float %}
           {% set water_tank_cylinder_height = states('sensor.water_tank_cylinder_height') | float %}
           {% set water_tank_cylinder_radius = states('sensor.water_tank_cylinder_radius') | float %}
           {% if water_level <= water_tank_cylinder_height %}
             {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_level %}
-            {{ cylinder_volume / 1000 | round(2) }}
+            {{ (cylinder_volume / 1000) | round(2) }}
           {% else %}
             {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_tank_cylinder_height %}
             {% set water_tank_cone_angle = states('sensor.water_tank_cone_angle') | float %}
@@ -87,7 +87,7 @@ sensor:
             {% set tan_from_degrees = tan((pi / 180) * water_tank_cone_angle) %}
             {% set water_level_radius_in_cone = water_tank_cylinder_radius - (water_height_in_cone / tan_from_degrees) %}
             {% set volume_cone = (1/3 * pi * (water_tank_cylinder_radius ** 2 + water_tank_cylinder_radius + water_level_radius_in_cone + water_level_radius_in_cone ** 2) * water_height_in_cone) %}
-            {{ (cylinder_volume + volume_cone) / 1000 | round(2)}}
+            {{ ((cylinder_volume + volume_cone) / 1000) | round(2)}}
           {% endif %}
   - platform: template
     sensors:
