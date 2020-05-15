@@ -47,11 +47,30 @@ sensor:
       water_level:
         friendly_name: "Water level"
         unit_of_measurement: 'cm'
-        value_template: "{{ states('sensor.water_tank_height') | float + states('sensor.water_tank_sensor_error_adjustment') | float - states('sensor.water_distance_top') | float }}"
+        value_template: >-
+          {% set water_tank_height = states('sensor.water_tank_height') | float %}
+          {% set water_tank_sensor_error_adjustment = states('sensor.water_tank_sensor_error_adjustment') | float %}
+          {% set water_level = states('sensor.water_level') | float %}
+          {% set water_distance_top = states('sensor.water_distance_top') | float %}
+          {% set water_level = water_tank_height + water_tank_sensor_error_adjustment - water_distance_top %}
+          {% if water_level < 0 %}
+            {{ 0.0 }}
+          {% else %}
+            {{ water_level }}
+          {% endif %}
       water_percentage:
         friendly_name: "Water percentage"
-        unit_of_measurement: 'cm'
-        value_template: "{{ states('sensor.water_tank_height') | float + states('sensor.water_tank_sensor_error_adjustment') | float - states('sensor.water_distance_top') | float }}"
+        unit_of_measurement: '%'
+        value_template: >-
+          {% set water_tank_height = states('sensor.water_tank_height') | float %}
+          {% set water_tank_sensor_error_adjustment = states('sensor.water_tank_sensor_error_adjustment') | float %}
+          {% set water_level = states('sensor.water_level') | float %}
+          {% set percentage = (water_level / water_tank_height) * 100 %}
+          {% if percentage < 0 %}
+            {{ 0.0 }}
+          {% else %}
+            {{ percentage }}
+          {% endif %}
   - platform: template
     sensors:
       solar_angle:
@@ -60,3 +79,10 @@ sensor:
         value_template: "{{ state_attr('sun.sun', 'elevation') }}"
       sunrise:
         value_template: "{{ state_attr('sun.sun', 'next_rising') }}"
+
+        #  {% set percentage = (inverse / water_tank_height) * 100 %}
+        #   {% if percentage < 0 %}
+        #     {{ 0.0 }}
+        #   {% else %}
+        #     {{ percentage }}
+        #   {% endif %}
