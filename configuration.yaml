@@ -1,0 +1,32 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+# Uncomment this if you are using SSL/TLS, running in Docker container, etc.
+# http:
+#   base_url: example.duckdns.org:8123
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+sensor:
+  - platform: mqtt
+    name: "RSSI"
+    state_topic: "water-tank/level"
+    unit_of_measurement: 'dBm'
+    value_template: "{{ value_json.rssi }}"
+  - platform: mqtt
+    name: "sequence"
+    state_topic: "water-tank/level"    
+    value_template: "{{ value_json.sequence }}"
+  - platform: mqtt
+    name: "Distance from top"
+    state_topic: "water-tank/level"
+    unit_of_measurement: 'cm'
+    value_template: "{{ value_json.tank }}"
