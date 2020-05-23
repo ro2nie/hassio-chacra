@@ -15,14 +15,16 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
-binary_sensor: 
-  - platform: template
-    sensors:
-      water_tank_intent:
-        friendly_name: 'Water tank intent'
-        # If the logic from sensor_water_tank_intent was put here, it would not work, and the else would always equate to false, no matter what
-        value_template: >-
-          {{ states('sensor.water_tank_intent') }}        
+switch:
+  - platform: mqtt
+    name: "Water tank intent"
+    state_topic: "water-tank/status"
+    command_topic: "water-tank/status"
+    payload_on: "ON"
+    payload_off: "OFF"
+    state_on: "ON"
+    state_off: "OFF"
+    retain: true
 
 sensor:
   - platform: template

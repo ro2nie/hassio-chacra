@@ -1,1 +1,17 @@
-[]
+- alias: 'Switch water tank intent on'
+  trigger:
+    platform: state
+    entity_id: sensor.water_tank_intent
+    to: 'True'
+  action:
+    service: switch.turn_on
+    entity_id: switch.water_tank_intent
+
+- alias: 'Switch water tank intent off'
+  trigger:
+    platform: state
+    entity_id: sensor.water_tank_intent
+    to: 'False'
+  action:
+    service: switch.turn_off
+    entity_id: switch.water_tank_intent
