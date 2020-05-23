@@ -15,6 +15,15 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+binary_sensor: 
+  - platform: template
+    sensors:
+      water_tank_intent:
+        friendly_name: 'Water tank intent'
+        # If the logic from sensor_water_tank_intent was put here, it would not work, and the else would always equate to false, no matter what
+        value_template: >-
+          {{ states('sensor.water_tank_intent') }}        
+
 sensor:
   - platform: template
     sensors:
@@ -96,6 +105,21 @@ sensor:
           {% endif %}
         icon_template: >-
           mdi:water
+      water_tank_intent:
+        friendly_name: 'Water tank intent'
+        # If water percentage is 41, it will continue as ON, until it hits 95%.
+        # This is so that if the water level is coming down, it won't switch on immediately at 94%
+        # The explicit else would equate to 'maintain whichever state was last set'.
+        value_template: >-
+          {% set water_tank_percentage = states('sensor.water_percentage') | float %}
+          {% set intent = states('sensor.water_tank_intent') %}
+          {% if water_tank_percentage <= 40 %}
+            {{ true }}
+          {% elif water_tank_percentage >= 95 %}
+            {{ false }}
+          {% else %}
+            {{ intent }}
+          {% endif %}
   - platform: template
     sensors:
       solar_angle:
