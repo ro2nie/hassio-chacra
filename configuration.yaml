@@ -15,6 +15,31 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+input_select:
+  water_well_recover_time:
+    name: Water well recovery time
+    options:
+      - 10
+      - 20
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+      - 90
+      - 100
+      - 120
+      - 130
+      - 140
+      - 150
+      - 160
+      - 180
+      - 190
+      - 200
+    initial: 30
+    icon: mdi:clock
+
 switch:
   - platform: mqtt
     name: "Water tank intent"
