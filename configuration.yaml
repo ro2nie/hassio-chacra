@@ -40,6 +40,14 @@ input_select:
     initial: 30
     icon: mdi:clock
 
+# Water pump will continuously send ON status messages
+binary_sensor:
+  - platform: mqtt
+    name: "Water pump availability"
+    state_topic: "water-pump/status"
+    payload_on: "ON"
+    expire_after: 10
+
 switch:
   - platform: mqtt
     name: "Water tank intent"
