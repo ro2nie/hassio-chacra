@@ -19,6 +19,8 @@ input_select:
   water_well_recover_time:
     name: Water well recovery time
     options:
+      - 1
+      - 5
       - 10
       - 20
       - 30
@@ -37,14 +39,21 @@ input_select:
       - 180
       - 190
       - 200
-    initial: 30
+    # If initial is not specified, it should remember the value specified even after restarts
+    # initial: 30
     icon: mdi:clock
 
-# Water pump will continuously send ON status messages
+# Water pump will continuously send ON status messages //TODO implement this in wemos pump
 binary_sensor:
   - platform: mqtt
     name: "Water pump availability"
-    state_topic: "water-pump/status"
+    state_topic: "water-pump/availability"
+    payload_on: "ON"
+    expire_after: 10
+  # Water tank will continuously send ON status messages //TODO implement this in wemos tank
+  - platform: mqtt
+    name: "Water tank availability"
+    state_topic: "water-tank/availability"
     payload_on: "ON"
     expire_after: 10
 
@@ -72,16 +81,19 @@ sensor:
         value_template: !secret water_tank_cylinder_radius
       water_tank_cone_angle:
         value_template: !secret water_tank_cone_angle
+  # - platform: mqtt
+  #   name: "RSSI"
+  #   state_topic: "water-tank/level"
+  #   unit_of_measurement: 'dBm'
+  #   value_template: "{{ value_json.rssi }}"
+  #   icon: mdi:signal-cellular-3
+  # - platform: mqtt
+  #   name: "sequence"
+  #   state_topic: "water-tank/level"
+  #   value_template: "{{ value_json.sequence }}"
   - platform: mqtt
-    name: "RSSI"
-    state_topic: "water-tank/level"
-    unit_of_measurement: 'dBm'
-    value_template: "{{ value_json.rssi }}"
-    icon: mdi:signal-cellular-3
-  - platform: mqtt
-    name: "sequence"
-    state_topic: "water-tank/level"    
-    value_template: "{{ value_json.sequence }}"
+    name: "Water pump status"
+    state_topic: "water-pump/status"
   - platform: mqtt
     name: "Water distance top"
     state_topic: "water-tank/level"
@@ -155,6 +167,42 @@ sensor:
           {% else %}
             {{ intent }}
           {% endif %}
+        icon_template: >-
+          mdi:flash
+      water_tank_availability_display:
+        friendly_name: "Water tank availability"
+        value_template: >-
+          {% set water_tank_availability = states('binary_sensor.water_tank_availability') %}
+          {% if water_tank_availability == 'on' %}
+            Online
+          {% else %}
+            Offline
+          {% endif %}
+      water_pump_availability_display:
+        friendly_name: "Water pump availability"
+        value_template: >-
+          {% set water_pump_availability = states('binary_sensor.water_pump_availability') %}
+          {% if water_pump_availability == 'on' %}
+            Online
+          {% else %}
+            Offline
+          {% endif %}
+      water_well_recovery_countdown_display:
+        friendly_name: "Water well recovery countdown"
+        unit_of_measurement: 'min'
+        value_template: >-
+          {% set water_well_recovery_countdown = states('sensor.water_well_recovery_countdown') | int %}
+          {% if water_well_recovery_countdown == 0 %}
+            less than 1
+          {% else %}
+            {{ water_well_recovery_countdown }}
+          {% endif %}
+        icon_template: mdi:clock
+  - platform: mqtt
+    name: "Water well recovery countdown"
+    state_topic: "water-well/recovery-countdown"
+    unit_of_measurement: 'min'
+    icon: mdi:clock
   - platform: template
     sensors:
       solar_angle:

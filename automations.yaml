@@ -15,3 +15,37 @@
   action:
     service: switch.turn_off
     entity_id: switch.water_tank_intent
+
+- alias: 'Send water well recovery time'
+  trigger:
+    platform: state
+    entity_id: input_select.water_well_recover_time
+  action:
+    service: mqtt.publish
+    data:
+      topic: "water-well/recovery-time"
+      payload_template: "{{ states('input_select.water_well_recover_time') }}"
+
+- alias: 'Send water well recovery time when water pump becomes available'
+  trigger:
+    platform: state
+    entity_id: binary_sensor.water_pump_availability
+    to: 'on'
+  action:
+    service: mqtt.publish
+    data:
+      topic: "water-well/recovery-time"
+      payload_template: "{{ states('input_select.water_well_recover_time') }}"
+
+# This rule covers an edge case, when homeassistant is restarted, and doesn't remember pump state
+# The well recovery time is set, and so pump state needs to be reset if pump was already on.
+- alias: 'Send water well recovery time when water pump status becomes unknown'
+  trigger:
+    platform: state
+    entity_id: sensor.water_pump_status
+    to: 'unknown'
+  action:
+    service: mqtt.publish
+    data:
+      topic: "water-well/recovery-time"
+      payload_template: "{{ states('input_select.water_well_recover_time') }}"
