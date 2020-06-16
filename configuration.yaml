@@ -211,3 +211,7 @@ sensor:
         value_template: "{{ state_attr('sun.sun', 'elevation') }}"
       sunrise:
         value_template: "{{ state_attr('sun.sun', 'next_rising') }}"
+
+# TODO implement availability on water tank. Send keepalives
+# Use wemos d1 mini for ultrasonic sensor
+# Send the distance from top directly as MQTT message
