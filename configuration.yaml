@@ -215,3 +215,4 @@ sensor:
 # TODO implement availability on water tank. Send keepalives
 # Use wemos d1 mini for ultrasonic sensor
 # Send the distance from top directly as MQTT message
+# Change icons. Have icons that react on availability Offline and Online
