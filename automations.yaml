@@ -49,3 +49,26 @@
     data:
       topic: "water-well/recovery-time"
       payload_template: "{{ states('input_select.water_well_recover_time') }}"
+
+
+- alias: 'Send water tank sensor reading interval for when the water pump is off'
+  trigger:
+    platform: state
+    entity_id: input_select.water_tank_level_sensor_interval_not_pumping
+  action:
+    service: mqtt.publish
+    data:
+      topic: "water-tank/interval-not-pumping"
+      payload_template: "{{ states('input_select.water_tank_level_sensor_interval_not_pumping') }}"
+
+
+- alias: 'Send water tank sensor reading interval for when the water pump is off just when the water tank becomes available'
+  trigger:
+    platform: state
+    entity_id: binary_sensor.water_tank_availability
+    to: 'on'
+  action:
+    service: mqtt.publish
+    data:
+      topic: "water-tank/interval-not-pumping"
+      payload_template: "{{ states('input_select.water_tank_level_sensor_interval_not_pumping') }}"

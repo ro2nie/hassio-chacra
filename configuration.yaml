@@ -17,7 +17,7 @@ scene: !include scenes.yaml
 
 input_select:
   water_well_recover_time:
-    name: Water well recovery time
+    name: Set recovery time
     options:
       - 1
       - 5
@@ -43,14 +43,45 @@ input_select:
     # initial: 30
     icon: mdi:clock
 
-# Water pump will continuously send ON status messages //TODO implement this in wemos pump
+  # Allows user to set the interval for the water level ultrasonic sensor readings for when the water pump
+  # is NOT pumping water.
+  # Notice that we do not provide a similar select for when the water pump is pumping water. This is so that
+  # we do not en up with an overflowing water tank in case this is wrongly set. The default is set in the
+  # arduino board (10 second interval for when water pump is on).
+  water_tank_level_sensor_interval_not_pumping:
+    name: Set interval for when pump is off
+    options:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 10
+      - 20
+      - 30
+      - 40
+      - 50
+      - 60
+      - 70
+      - 80
+      - 90
+      - 100
+      - 120
+      - 130
+      - 140
+      - 150
+      - 160
+      - 180
+      - 190
+      - 200
+    icon: mdi:clock
+
 binary_sensor:
   - platform: mqtt
     name: "Water pump availability"
     state_topic: "water-pump/availability"
     payload_on: "ON"
     expire_after: 10
-  # Water tank will continuously send ON status messages //TODO implement this in wemos tank
   - platform: mqtt
     name: "Water tank availability"
     state_topic: "water-tank/availability"
@@ -81,16 +112,9 @@ sensor:
         value_template: !secret water_tank_cylinder_radius
       water_tank_cone_angle:
         value_template: !secret water_tank_cone_angle
-  # - platform: mqtt
-  #   name: "RSSI"
-  #   state_topic: "water-tank/level"
-  #   unit_of_measurement: 'dBm'
-  #   value_template: "{{ value_json.rssi }}"
-  #   icon: mdi:signal-cellular-3
-  # - platform: mqtt
-  #   name: "sequence"
-  #   state_topic: "water-tank/level"
-  #   value_template: "{{ value_json.sequence }}"
+  - platform: mqtt
+    name: "Water well status"
+    state_topic: "water-well/status"
   - platform: mqtt
     name: "Water pump status"
     state_topic: "water-pump/status"
@@ -98,7 +122,6 @@ sensor:
     name: "Water distance top"
     state_topic: "water-tank/level"
     unit_of_measurement: 'cm'
-    value_template: "{{ value_json.tank }}"
   - platform: template
     sensors:
       water_level:
@@ -154,7 +177,8 @@ sensor:
           mdi:water
       water_tank_intent:
         friendly_name: 'Water tank intent'
-        # If water percentage is 41, it will continue as ON, until it hits 95%.
+        # Used for automation
+        # If water percentage is 41%, it will continue as ON, until it hits 95%.
         # This is so that if the water level is coming down, it won't switch on immediately at 94%
         # The explicit else would equate to 'maintain whichever state was last set'.
         value_template: >-
@@ -187,17 +211,6 @@ sensor:
           {% else %}
             Offline
           {% endif %}
-      water_well_recovery_countdown_display:
-        friendly_name: "Water well recovery countdown"
-        unit_of_measurement: 'min'
-        value_template: >-
-          {% set water_well_recovery_countdown = states('sensor.water_well_recovery_countdown') | int %}
-          {% if water_well_recovery_countdown == 0 %}
-            less than 1
-          {% else %}
-            {{ water_well_recovery_countdown }}
-          {% endif %}
-        icon_template: mdi:clock
   - platform: mqtt
     name: "Water well recovery countdown"
     state_topic: "water-well/recovery-countdown"
@@ -212,7 +225,5 @@ sensor:
       sunrise:
         value_template: "{{ state_attr('sun.sun', 'next_rising') }}"
 
-# TODO implement availability on water tank. Send keepalives
-# Use wemos d1 mini for ultrasonic sensor
-# Send the distance from top directly as MQTT message
+# TODO
 # Change icons. Have icons that react on availability Offline and Online
