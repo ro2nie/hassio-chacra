@@ -1,17 +1,40 @@
-- alias: 'Switch water tank intent on'
+- alias: 'Restart water tank and water well boards when homeassistant starts'
   trigger:
-    platform: state
-    entity_id: sensor.water_tank_intent
-    to: 'True'
+    - platform: homeassistant
+      event: start
+  action:
+    - service: mqtt.publish
+      data:
+        topic: "water-well/restart"
+        payload: on
+    - service: mqtt.publish
+      data:
+        topic: "water-tank/restart"
+        payload: on
+
+- alias: 'Switch water tank intent on when water level is 40% or lower'
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.water_percentage
+      below: 41
   action:
     service: switch.turn_on
     entity_id: switch.water_tank_intent
 
-- alias: 'Switch water tank intent off'
+- alias: 'Switch water tank intent off when water level is 95% or higher'
+  trigger:
+    platform: numeric_state
+    entity_id: sensor.water_percentage
+    above: 95
+  action:
+    service: switch.turn_off
+    entity_id: switch.water_tank_intent
+
+- alias: 'Switch water tank intent off when water tank goes offline'
   trigger:
     platform: state
-    entity_id: sensor.water_tank_intent
-    to: 'False'
+    entity_id: binary_sensor.water_tank_availability
+    to: 'unavailable'
   action:
     service: switch.turn_off
     entity_id: switch.water_tank_intent
@@ -37,20 +60,6 @@
       topic: "water-well/recovery-time"
       payload_template: "{{ states('input_select.water_well_recover_time') }}"
 
-# This rule covers an edge case, when homeassistant is restarted, and doesn't remember pump state
-# The well recovery time is set, and so pump state needs to be reset if pump was already on.
-- alias: 'Send water well recovery time when water pump status becomes unknown'
-  trigger:
-    platform: state
-    entity_id: sensor.water_pump_status
-    to: 'unknown'
-  action:
-    service: mqtt.publish
-    data:
-      topic: "water-well/recovery-time"
-      payload_template: "{{ states('input_select.water_well_recover_time') }}"
-
-
 - alias: 'Send water tank sensor reading interval for when the water pump is off'
   trigger:
     platform: state
@@ -60,7 +69,6 @@
     data:
       topic: "water-tank/interval-not-pumping"
       payload_template: "{{ states('input_select.water_tank_level_sensor_interval_not_pumping') }}"
-
 
 - alias: 'Send water tank sensor reading interval for when the water pump is off just when the water tank becomes available'
   trigger:

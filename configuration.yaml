@@ -15,6 +15,12 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+input_boolean:
+  holiday_mode:
+    name: Holiday mode
+    icon: mdi:beach
+    # initial: off
+
 input_select:
   water_well_recover_time:
     name: Set recovery time
@@ -175,24 +181,6 @@ sensor:
           {% endif %}
         icon_template: >-
           mdi:water
-      water_tank_intent:
-        friendly_name: 'Water tank intent'
-        # Used for automation
-        # If water percentage is 41%, it will continue as ON, until it hits 95%.
-        # This is so that if the water level is coming down, it won't switch on immediately at 94%
-        # The explicit else would equate to 'maintain whichever state was last set'.
-        value_template: >-
-          {% set water_tank_percentage = states('sensor.water_percentage') | float %}
-          {% set intent = states('sensor.water_tank_intent') %}
-          {% if water_tank_percentage <= 40 %}
-            {{ true }}
-          {% elif water_tank_percentage >= 95 %}
-            {{ false }}
-          {% else %}
-            {{ intent }}
-          {% endif %}
-        icon_template: >-
-          mdi:flash
       water_tank_availability_display:
         friendly_name: "Water tank availability"
         value_template: >-
@@ -227,3 +215,6 @@ sensor:
 
 # TODO
 # Change icons. Have icons that react on availability Offline and Online
+
+
+#TODO try {{ is_state('switch.source', 'on') }} instead of {% if water_tank_availability == 'on'%}
