@@ -12,15 +12,6 @@
         topic: "water-tank/restart"
         payload: on
 
-- alias: 'Switch water tank intent on when water level is 40% or lower'
-  trigger:
-    - platform: numeric_state
-      entity_id: sensor.water_percentage
-      below: 41
-  action:
-    service: switch.turn_on
-    entity_id: switch.water_tank_intent
-
 - alias: 'Switch water tank intent off when water level is 95% or higher'
   trigger:
     platform: numeric_state
@@ -35,6 +26,48 @@
     platform: state
     entity_id: binary_sensor.water_tank_availability
     to: 'unavailable'
+  action:
+    service: switch.turn_off
+    entity_id: switch.water_tank_intent
+
+- alias: 'Switch water tank intent on when water tank is online and the level is 40% or less'
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.water_tank_availability
+      to: 'on'
+    - platform: state
+      entity_id: input_boolean.holiday_mode
+      to: 'off'
+  condition:
+    condition: and
+    conditions:
+      - condition: state
+        entity_id: input_boolean.holiday_mode
+        state: 'off'
+      - condition: numeric_state
+        entity_id: sensor.water_percentage
+        below: 41
+  action:
+    service: switch.turn_on
+    entity_id: switch.water_tank_intent
+
+- alias: 'Switch water tank intent off when holiday mode is on and when water tank is online and the level is 40% or less'
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.water_tank_availability
+      to: 'on'
+    - platform: state
+      entity_id: input_boolean.holiday_mode
+      to: 'on'
+  condition:
+    condition: and
+    conditions:
+      - condition: state
+        entity_id: input_boolean.holiday_mode
+        state: 'on'
+      - condition: numeric_state
+        entity_id: sensor.water_percentage
+        below: 41
   action:
     service: switch.turn_off
     entity_id: switch.water_tank_intent
