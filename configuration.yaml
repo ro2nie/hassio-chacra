@@ -128,6 +128,31 @@ sensor:
     name: "Water distance top"
     state_topic: "water-tank/level"
     unit_of_measurement: 'cm'
+
+  - platform: mqtt
+    name: "Water well temperature"
+    state_topic: "water-well/weather"
+    unit_of_measurement: '°C'
+    value_template: "{{ value_json.temperature }}"
+
+  - platform: mqtt
+    name: "Water well relative humidity"
+    state_topic: "water-well/weather"
+    unit_of_measurement: '%'
+    value_template: "{{ value_json.humidity }}"
+
+  - platform: mqtt
+    name: "Water well pressure"
+    state_topic: "water-well/weather"
+    unit_of_measurement: 'hPa'
+    value_template: "{{ value_json.pressure }}"
+
+  - platform: mqtt
+    name: "Water well altitude"
+    state_topic: "water-well/weather"
+    unit_of_measurement: 'm'
+    value_template: "{{ value_json.altitude }}"
+
   - platform: template
     sensors:
       water_level:
