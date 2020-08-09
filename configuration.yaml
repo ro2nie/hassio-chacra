@@ -15,6 +15,14 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+sun:
+  - elevation: 462
+weather:
+  - platform: openweathermap
+    api_key: !secret openweathermap_api_key
+    latitude: !secret home_latitude
+    longitude: !secret home_longitude
+
 input_boolean:
   holiday_mode:
     name: Holiday mode
@@ -81,7 +89,18 @@ input_select:
       - 190
       - 200
     icon: mdi:clock
-
+    
+  frost_prevention_cutoff_temperature:
+    name: Set minimum operational temperature
+    options:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    icon: mdi:clock
+    
 binary_sensor:
   - platform: mqtt
     name: "Water pump availability"
@@ -106,6 +125,20 @@ switch:
     retain: true
 
 sensor:
+  - platform: openweathermap
+    api_key: !secret openweathermap_api_key
+    monitored_conditions:
+      - weather
+      - temperature
+      - wind_speed
+      - wind_bearing
+      - humidity
+      - pressure
+      - clouds
+      - rain
+      - snow
+      - weather_code
+      
   - platform: template
     sensors:
       water_tank_height:
@@ -244,6 +277,10 @@ telegram_bot:
     allowed_chat_ids:
       - !secret telegram_allowed_chat_id
 
+notify:
+  - name: telegram
+    platform: telegram
+    chat_id: !secret telegram_allowed_chat_id
 # TODO
 # Change icons. Have icons that react on availability Offline and Online
 
