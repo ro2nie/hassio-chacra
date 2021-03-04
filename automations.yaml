@@ -1,3 +1,5 @@
+### SEND TRIGGER TO RESTART WEMOS AT TANK AND PUMP IF HOMEASSISTANT RESTARTS
+### (Ensures that current running tasks are flushed and restarted)
 - alias: 'Restart water tank and water well boards when homeassistant starts'
   trigger:
     - platform: homeassistant
@@ -12,6 +14,7 @@
         topic: "water-tank/restart"
         payload: on
 
+### STOP TANK INTENT WHEN TANK GOES OFFLINE
 - alias: 'Switch water tank intent off when water tank goes offline'
   trigger:
     platform: state
@@ -20,7 +23,8 @@
   action:
     service: switch.turn_off
     entity_id: switch.water_tank_intent
-    
+
+### STOP TANK INTENT WHEN PUMP GOES OFFLINE
 - alias: 'Switch water tank intent off when water pump goes offline'
   trigger:
     platform: state
@@ -30,17 +34,7 @@
     service: switch.turn_off
     entity_id: switch.water_tank_intent
 
-## Frost protection! - bellow 2 degrees
-- alias: 'Switch water tank intent off when water well temperature is bellow 2'
-  trigger:
-    platform: numeric_state
-    entity_id: sensor.water_well_temperature
-    below: 2
-  action:
-    service: switch.turn_off
-    entity_id: switch.water_tank_intent
-    
-# Turn the tank intent off when level to high, no matter what (don't care about holiday_mode or anything else)
+# Turn the tank intent off when level to high, no matter what (don't care about holiday_mode, temperature or anything else. Do not let the tank overflow!)
 - alias: 'Switch water tank intent off when water level is 95% or higher'
   trigger:
     platform: numeric_state
@@ -50,17 +44,20 @@
     service: switch.turn_off
     entity_id: switch.water_tank_intent
     
-- alias: 'Switch water tank intent off when water well temperature falls bellow 2 degrees'
+#### STOP WHEN TEMPERATURE IS BELLOW 2 DEGREES
+## Frost protection! - bellow 2 degrees (1.99 or lower)
+- alias: 'Switch water tank intent off when water well temperature falls bellow 2'
   trigger:
     platform: numeric_state
     entity_id: sensor.water_well_temperature
-    below: 2
+    below: input_select.frost_prevention_cutoff_temperature
   action:
     service: switch.turn_off
     entity_id: switch.water_tank_intent
-
-## When temperature is bellow 10 degrees start pump at 81% (Keep it as full as possible! in preparation for freezing!)
-- alias: 'Switch water tank intent on when water tank is online, (the level is 40% or less) and the holiday mode if off and well temperature is above 2'
+    
+#### BELLOW 'keep tank level high' (temp in degrees. Usually 10) WATER TANK INTENT (> 80%) (BETWEEN freeze protection cut off and 'keep tank level high' degrees)
+## When temperature is bellow 10 degrees start pump at < 81% (Keep it as full as possible! in preparation for freezing!)
+- alias: 'Switch water tank intent on when water tank is online, pump is online, the holiday mode is off, the well temperature is bellow 10'
   trigger:
     - platform: state
       entity_id: binary_sensor.water_pump_availability
@@ -74,9 +71,13 @@
     - platform: numeric_state
       entity_id: sensor.water_percentage
       below: 81
-    - platform: numeric_state
-      entity_id: sensor.water_well_temperature
-      below: 10
+      
+    - platform: state
+      entity_id: sensor.water_pump_temperature_bellow_keep_tank_level_high
+      to: 'True'
+    - platform: state
+      entity_id: sensor.water_pump_temperature_bellow_frost_prevention_cutoff
+      to: 'False'
   condition:
     condition: and
     conditions:
@@ -92,15 +93,20 @@
       - condition: numeric_state
         entity_id: sensor.water_percentage
         below: 81
-      - condition: numeric_state
-        entity_id: sensor.water_well_temperature
-        below: 10
+        ## Is above freezing, and bellow temp to keep tank level high
+      - condition: state
+        entity_id: sensor.water_pump_temperature_bellow_keep_tank_level_high
+        state: 'True'
+      - condition: state
+        entity_id: sensor.water_pump_temperature_bellow_frost_prevention_cutoff
+        state: 'False'
   action:
     service: switch.turn_on
     entity_id: switch.water_tank_intent
 
+#### ABOVE 10 DEGREES WATER TANK INTENT (10.00 or higher)
 ## When temperature is above 10 degrees start pump at 41%
-- alias: 'Switch water tank intent on when water tank is online, (the level is 40% or less) and the holiday mode if off and well temperature is above 2'
+- alias: 'Switch water tank intent on when water tank is online, (the level is 40% or less) and the holiday mode if off and well temperature is above 10'
   trigger:
     - platform: state
       entity_id: binary_sensor.water_pump_availability
@@ -114,9 +120,9 @@
     - platform: numeric_state
       entity_id: sensor.water_percentage
       below: 41
-    - platform: numeric_state
-      entity_id: sensor.water_well_temperature
-      above: 10
+    - platform: state
+      entity_id: sensor.water_pump_temperature_bellow_keep_tank_level_high
+      to: 'False'
   condition:
     condition: and
     conditions:
@@ -132,15 +138,17 @@
       - condition: numeric_state
         entity_id: sensor.water_percentage
         below: 41
-      - condition: numeric_state
-        entity_id: sensor.water_well_temperature
-        above: 10
+        ##Is above the keep tank level high temp, if so, pump on at 41%
+      - condition: state
+        entity_id: sensor.water_pump_temperature_bellow_keep_tank_level_high
+        state: 'False'
   action:
     service: switch.turn_on
     entity_id: switch.water_tank_intent
 
+#### HOLIDAY MODE ON
 # Set tank intent off when holiday mode is switched on, no matter what.
-- alias: 'Switch water tank intent off when holiday mode is on no matter what'
+- alias: 'Switch water tank intent off when holiday mode is on, no matter what'
   trigger:
     - platform: state
       entity_id: input_boolean.holiday_mode
@@ -152,7 +160,29 @@
   action:
     service: switch.turn_off
     entity_id: switch.water_tank_intent
+    
+#### HOLIDAY MODE OFF
+# Reset well and tank when holiday mode if set to off. Forces tank to resample tank level and well to check for water presence.
+- alias: 'Reset well and tank when holiday mode is switched off.'
+  trigger:
+    - platform: state
+      entity_id: input_boolean.holiday_mode
+      to: 'off'
+  condition:
+    - condition: state
+      entity_id: input_boolean.holiday_mode
+      state: 'off'
+  action:
+    - service: mqtt.publish
+      data:
+        topic: "water-well/restart"
+        payload: on
+    - service: mqtt.publish
+      data:
+        topic: "water-tank/restart"
+        payload: on
 
+####SEND WATER WELL RECOVERY TIME WHEN CHANGING MINUTES SELECTOR ON UI
 - alias: 'Send water well recovery time'
   trigger:
     platform: state
@@ -163,6 +193,7 @@
       topic: "water-well/recovery-time"
       payload_template: "{{ states('input_select.water_well_recover_time') }}"
 
+####SEND WATER WELL RECOVERY TIME WHEN WELL PUMP BECOMES ONLINE
 - alias: 'Send water well recovery time when water pump becomes available'
   trigger:
     platform: state
@@ -174,6 +205,7 @@
       topic: "water-well/recovery-time"
       payload_template: "{{ states('input_select.water_well_recover_time') }}"
 
+#### SEND WATER TANK SENSOR LEVEL SAMPLING MINUTE INTERVAL FOR WHEN PUMP IS OFF
 - alias: 'Send water tank sensor reading interval for when the water pump is off'
   trigger:
     platform: state
@@ -184,6 +216,7 @@
       topic: "water-tank/interval-not-pumping"
       payload_template: "{{ states('input_select.water_tank_level_sensor_interval_not_pumping') }}"
 
+#### SEND WATER TANK SENSOR LEVEL SAMPLING MINUTE INTERVAL FOR WHEN TANK BECOMES AVAILABLE (Changes to online status)
 - alias: 'Send water tank sensor reading interval for when the water pump is off just when the water tank becomes available'
   trigger:
     platform: state
@@ -198,21 +231,27 @@
 ## Telegram alerts
 # Water level too low alert
 - alias: 'Send telegram alert when water level bellow 10%'
+  mode: single
+  max_exceeded: silent
   trigger:
     platform: numeric_state
     entity_id: sensor.water_percentage
     below: 10
   action:
-    service: notify.Telegram
-    data:
-      message: 'Water level is now bellow 10%'
-      
-# Temp bellow 10 degrees pump between 81% and 95%
-- alias: 'Send telegram alert when water well temperature is bellow 10 degrees'
+    - service: notify.Telegram
+      data:
+        message: 'Water level is now bellow 10%'
+    - delay: 02:00:00
+
+# Temp bellow 'keep tank level high' temperature means pump on between 81% and 95%
+- alias: 'Send telegram alert when water well temperature is bellow keep tank level high temperature'
+  mode: single
+  max_exceeded: silent
   trigger:
-    platform: numeric_state
-    entity_id: sensor.water_well_temperature
-    below: 10
+    platform: state
+    entity_id: sensor.water_pump_temperature_bellow_keep_tank_level_high
+    from: 'False'
+    to: 'True'
   condition:
     condition: and
     conditions:
@@ -220,16 +259,41 @@
         entity_id: input_boolean.holiday_mode
         state: 'off'
   action:
-    service: notify.Telegram
-    data:
-      message: 'Water well temperature is now bellow 10°C. The water pump will now pump when the water tank reaches 81% and will fill up to 95%. When the temperature goes above 10°C, the water pump will resume pumping between 41% and 95%.'
+    - service: notify.Telegram
+      data:
+        message: "Water well temperature is now bellow {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C. The water pump will now pump when the water tank reaches 81% and will fill up to 95%. When the temperature goes above {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C, the water pump will resume pumping between 41% and 95%."
+    - delay: 08:00:00
+    
+# Temp above 'keep tank level high' temperature means pump on between 41% and 95%
+- alias: 'Send telegram alert when water well temperature is above keep tank level high temperature'
+  mode: single
+  max_exceeded: silent
+  trigger:
+    platform: state
+    entity_id: sensor.water_pump_temperature_bellow_keep_tank_level_high
+    from: 'True'
+    to: 'False'
+  condition:
+    condition: and
+    conditions:
+      - condition: state
+        entity_id: input_boolean.holiday_mode
+        state: 'off'
+  action:
+    - service: notify.Telegram
+      data:
+        message: "Water well temperature is now above {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C. The water pump will now pump when the water tank reaches 41% and will fill up to 95%. When the temperature goes bellow {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C, the water pump will resume pumping between 41% and 95%."
+    - delay: 08:00:00
 
 # Frost protection alert
-- alias: 'Send telegram alert when water well temperature is bellow 2 degrees'
+- alias: 'Send telegram alert when water well temperature is bellow frost protection cut of temperature'
+  mode: single
+  max_exceeded: silent
   trigger:
-    platform: numeric_state
-    entity_id: sensor.water_well_temperature
-    below: 2
+    platform: state
+    entity_id: sensor.water_pump_temperature_bellow_frost_prevention_cutoff
+    from: 'False'
+    to: 'True'
   condition:
     condition: and
     conditions:
@@ -237,6 +301,28 @@
         entity_id: input_boolean.holiday_mode
         state: 'off'
   action:
-    service: notify.Telegram
-    data:
-      message: 'Water well temperature is now bellow 2°C. Water pump will resume working when temperature goes above 2°C.'
+    - service: notify.Telegram
+      data:
+        message: "Water well temperature is now bellow {{ states('input_select.frost_prevention_cutoff_temperature') }}°C (the currently set frost prevention cut off temperature). The water pump will resume working when the temperature goes above {{ states('input_select.frost_prevention_cutoff_temperature') }}°C."
+    - delay: 08:00:00
+    
+# Frost protection alert
+- alias: 'Send telegram alert when water well temperature is above frost protection cut off temperature'
+  mode: single
+  max_exceeded: silent
+  trigger:
+    platform: state
+    entity_id: sensor.water_pump_temperature_bellow_frost_prevention_cutoff
+    from: 'True'
+    to: 'False'
+  condition:
+    condition: and
+    conditions:
+      - condition: state
+        entity_id: input_boolean.holiday_mode
+        state: 'off'
+  action:
+    - service: notify.Telegram
+      data:
+        message: "Water well temperature is now above {{ states('input_select.frost_prevention_cutoff_temperature') }}°C (the currently set frost prevention cut off temperature). The water pump has now resumed working."
+    - delay: 08:00:00

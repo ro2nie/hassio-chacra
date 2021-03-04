@@ -17,11 +17,6 @@ scene: !include scenes.yaml
 
 sun:
   - elevation: 462
-weather:
-  - platform: openweathermap
-    api_key: !secret openweathermap_api_key
-    latitude: !secret home_latitude
-    longitude: !secret home_longitude
 
 input_boolean:
   holiday_mode:
@@ -91,7 +86,7 @@ input_select:
     icon: mdi:clock
     
   frost_prevention_cutoff_temperature:
-    name: Set minimum operational temperature
+    name: Set minimum operational temperature (frost prevention)
     options:
       - 0
       - 1
@@ -99,7 +94,27 @@ input_select:
       - 3
       - 4
       - 5
-    icon: mdi:clock
+      - 6
+      - 7
+    icon: mdi:temperature
+    
+## If the current temperature is bellow this, the tank will not let the level go under 81%
+## This is good for preparation for temperatures that might be approaching frost levels
+## As it will keep the tank fully stocked up should the pump stop working due to frost.
+## This could also be beneficial in summer if the risk of fires is high. In which case the set temperature
+## here should be set high.
+  keep_tank_levels_high_cutoff_temperature:
+    name: Set max temp at which tank should keep level high
+    options:
+      - 10
+      - 15
+      - 20
+      - 25
+      - 30
+      - 35
+      - 40
+      - 45
+    icon: mdi:temperature
     
 binary_sensor:
   - platform: mqtt
@@ -151,12 +166,15 @@ sensor:
         value_template: !secret water_tank_cylinder_radius
       water_tank_cone_angle:
         value_template: !secret water_tank_cone_angle
+  
   - platform: mqtt
     name: "Water well status"
     state_topic: "water-well/status"
+  
   - platform: mqtt
     name: "Water pump status"
     state_topic: "water-pump/status"
+  
   - platform: mqtt
     name: "Water distance top"
     state_topic: "water-tank/level"
@@ -257,6 +275,34 @@ sensor:
           {% else %}
             Offline
           {% endif %}
+      water_pump_temperature_bellow_keep_tank_level_high:
+        friendly_name: "Water pump temperature bellow the 'keep tank level high' temperature"
+        value_template: >-
+          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
+          {% set keep_tank_levels_high_cutoff_temperature = states('input_select.keep_tank_levels_high_cutoff_temperature') | float %}
+          {% if states('sensor.water_well_temperature') == 'unknown' %}
+            {{ states('sensor.water_well_temperature') }}
+          {% elif water_pump_temperature < keep_tank_levels_high_cutoff_temperature %}
+            {{ True }}
+          {% else %}
+            {{ False }}
+          {% endif %}
+        icon_template: >-
+          mdi:thermometer
+      water_pump_temperature_bellow_frost_prevention_cutoff:
+        friendly_name: "Water pump temperature bellow frost prevention cut off temperature"
+        value_template: >-
+          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
+          {% set frost_prevention_cutoff_temperature = states('input_select.frost_prevention_cutoff_temperature') | float %}
+          {% if states('sensor.water_well_temperature') == 'unknown' %}
+            {{ states('sensor.water_well_temperature') }}
+          {% elif water_pump_temperature < frost_prevention_cutoff_temperature %}
+            {{ True }}
+          {% else %}
+            {{ False }}
+          {% endif %}
+        icon_template: >-
+          mdi:thermometer
   - platform: mqtt
     name: "Water well recovery countdown"
     state_topic: "water-well/recovery-countdown"
