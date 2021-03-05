@@ -140,20 +140,6 @@ switch:
     retain: true
 
 sensor:
-  - platform: openweathermap
-    api_key: !secret openweathermap_api_key
-    monitored_conditions:
-      - weather
-      - temperature
-      - wind_speed
-      - wind_bearing
-      - humidity
-      - pressure
-      - clouds
-      - rain
-      - snow
-      - weather_code
-      
   - platform: template
     sensors:
       water_tank_height:
