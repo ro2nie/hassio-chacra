@@ -180,6 +180,7 @@ sensor:
     state_topic: "water-tank/level"
     unit_of_measurement: 'cm'
 
+  ## WHEATHER well/pump
   - platform: mqtt
     name: "Water well temperature"
     state_topic: "water-well/weather"
@@ -190,17 +191,42 @@ sensor:
     name: "Water well relative humidity"
     state_topic: "water-well/weather"
     unit_of_measurement: '%'
-    value_template: "{{ value_json.humidity }}"
+    value_template: "{{ value_json.humidity | round(2) }}"
 
   - platform: mqtt
     name: "Water well pressure"
     state_topic: "water-well/weather"
     unit_of_measurement: 'hPa'
-    value_template: "{{ value_json.pressure }}"
+    value_template: "{{ value_json.pressure | round(2) }}"
 
   - platform: mqtt
     name: "Water well altitude"
-    state_topic: "water-well/weather"
+    state_topic: "water-tank/weather"
+    unit_of_measurement: 'm'
+    value_template: "{{ value_json.altitude }}"
+    
+  ## WHEATHER tank
+  - platform: mqtt
+    name: "Water tank temperature"
+    state_topic: "water-tank/weather"
+    unit_of_measurement: '°C'
+    value_template: "{{ value_json.temperature }}"
+
+  - platform: mqtt
+    name: "Water tank relative humidity"
+    state_topic: "water-tank/weather"
+    unit_of_measurement: '%'
+    value_template: "{{ value_json.humidity | round(2) }}"
+
+  - platform: mqtt
+    name: "Water tank pressure"
+    state_topic: "water-tank/weather"
+    unit_of_measurement: 'hPa'
+    value_template: "{{ value_json.pressure | round(2) }}"
+
+  - platform: mqtt
+    name: "Water tank altitude"
+    state_topic: "water-tank/weather"
     unit_of_measurement: 'm'
     value_template: "{{ value_json.altitude }}"
 
@@ -303,6 +329,45 @@ sensor:
           {% endif %}
         icon_template: >-
           mdi:thermometer
+      temperature_average_tank_pump:
+        friendly_name: "Averaged temperature tank/pump"
+        unit_of_measurement: '°C'
+        value_template: >-
+          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
+          {% set water_tank_temperature = states('sensor.water_tank_temperature') | float %}
+          {% if states('sensor.water_well_temperature') == 'unknown' or states('sensor.water_tank_temperature') == 'unknown' %}
+            {{ states('sensor.water_well_temperature') }}
+          {% else %}
+            {{ ((water_pump_temperature + water_tank_temperature) / 2) | round(2)}}
+          {% endif %}
+        icon_template: >-
+          mdi:thermometer
+      humidity_average_tank_pump:
+        friendly_name: "Averaged relative humidity tank/pump"
+        unit_of_measurement: '%'
+        value_template: >-
+          {% set water_pump_humidity = states('sensor.water_well_relative_humidity') | float %}
+          {% set water_tank_humidity = states('sensor.water_tank_relative_humidity') | float %}
+          {% if states('sensor.water_well_relative_humidity') == 'unknown' or states('sensor.water_tank_relative_humidity') == 'unknown' %}
+            {{ states('sensor.water_well_relative_humidity') }}
+          {% else %}
+            {{ ((water_pump_humidity + water_tank_humidity) / 2) | round(2)}}
+          {% endif %}
+        icon_template: >-
+          mdi:percent
+      pressure_average_tank_pump:
+        friendly_name: "Averaged pressure tank/pump"
+        unit_of_measurement: 'hPa'
+        value_template: >-
+          {% set water_pump_pressure = states('sensor.water_well_pressure') | float %}
+          {% set water_tank_pressure = states('sensor.water_tank_pressure') | float %}
+          {% if states('sensor.water_well_pressure') == 'unknown' or states('sensor.water_tank_pressure') == 'unknown' %}
+            {{ states('sensor.water_well_pressure') }}
+          {% else %}
+            {{ ((water_pump_pressure + water_tank_pressure) / 2) | round(2)}}
+          {% endif %}
+        icon_template: >-
+          mdi:weather-cloudy-arrow-right
   - platform: mqtt
     name: "Water well recovery countdown"
     state_topic: "water-well/recovery-countdown"
