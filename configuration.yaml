@@ -203,7 +203,7 @@ sensor:
     name: "Water well altitude"
     state_topic: "water-tank/weather"
     unit_of_measurement: 'm'
-    value_template: "{{ value_json.altitude }}"
+    value_template: "{{ value_json.altitude | round(2) }}"
     
   ## WHEATHER tank
   - platform: mqtt
@@ -228,7 +228,7 @@ sensor:
     name: "Water tank altitude"
     state_topic: "water-tank/weather"
     unit_of_measurement: 'm'
-    value_template: "{{ value_json.altitude }}"
+    value_template: "{{ value_json.altitude | round(2) }}"
 
   - platform: template
     sensors:
@@ -304,11 +304,11 @@ sensor:
       water_pump_temperature_bellow_keep_tank_level_high:
         friendly_name: "Water pump temperature bellow the 'keep tank level high' temperature"
         value_template: >-
-          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
+          {% set lowest_temperature = states('sensor.temperature_lowest_tank_or_pump') | float %}
           {% set keep_tank_levels_high_cutoff_temperature = states('input_select.keep_tank_levels_high_cutoff_temperature') | float %}
-          {% if states('sensor.water_well_temperature') == 'unknown' %}
-            {{ states('sensor.water_well_temperature') }}
-          {% elif water_pump_temperature < keep_tank_levels_high_cutoff_temperature %}
+          {% if states('sensor.temperature_lowest_tank_or_pump') == 'unknown' %}
+            {{ states('sensor.temperature_lowest_tank_or_pump') }}
+          {% elif lowest_temperature < keep_tank_levels_high_cutoff_temperature %}
             {{ True }}
           {% else %}
             {{ False }}
@@ -318,11 +318,11 @@ sensor:
       water_pump_temperature_bellow_frost_prevention_cutoff:
         friendly_name: "Water pump temperature bellow frost prevention cut off temperature"
         value_template: >-
-          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
+          {% set lowest_temperature = states('sensor.temperature_lowest_tank_or_pump') | float %}
           {% set frost_prevention_cutoff_temperature = states('input_select.frost_prevention_cutoff_temperature') | float %}
-          {% if states('sensor.water_well_temperature') == 'unknown' %}
-            {{ states('sensor.water_well_temperature') }}
-          {% elif water_pump_temperature < frost_prevention_cutoff_temperature %}
+          {% if states('sensor.temperature_lowest_tank_or_pump') == 'unknown' %}
+            {{ states('sensor.temperature_lowest_tank_or_pump') }}
+          {% elif lowest_temperature < frost_prevention_cutoff_temperature %}
             {{ True }}
           {% else %}
             {{ False }}
@@ -339,6 +339,21 @@ sensor:
             {{ states('sensor.water_well_temperature') }}
           {% else %}
             {{ ((water_pump_temperature + water_tank_temperature) / 2) | round(2)}}
+          {% endif %}
+        icon_template: >-
+          mdi:thermometer
+      temperature_lowest_tank_or_pump:
+        friendly_name: "Lowest temperature tank/pump"
+        unit_of_measurement: '°C'
+        value_template: >-
+          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
+          {% set water_tank_temperature = states('sensor.water_tank_temperature') | float %}
+          {% if states('sensor.water_well_temperature') == 'unknown' or states('sensor.water_tank_temperature') == 'unknown' %}
+            {{ states('sensor.water_well_temperature') }}
+          {% elif water_pump_temperature < water_tank_temperature %}
+            {{ water_pump_temperature }}
+          {% else %}
+            {{ water_tank_temperature }}
           {% endif %}
         icon_template: >-
           mdi:thermometer
