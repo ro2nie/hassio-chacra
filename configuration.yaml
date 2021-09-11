@@ -6,6 +6,10 @@ default_config:
 # http:
 #   base_url: example.duckdns.org:8123
 
+homeassistant:
+  allowlist_external_dirs:
+    - /config
+
 # Text to speech
 tts:
   - platform: google_translate
@@ -398,3 +402,17 @@ notify:
 
 
 #TODO try {{ is_state('switch.source', 'on') }} instead of {% if water_tank_availability == 'on'%}
+
+# Keeps db size small. Purged every 04:12 AM by default.
+# Writes to db every 30 seconds rather than the default of 1. This reduces the number of writes which is better on Rpi
+recorder:
+  purge_keep_days: 7   # Keep 1 week in history after purging @ 04:12
+  commit_interval: 30   # Write to disk every 30 seconds
+  exclude:
+    domains:
+      - automation
+      - weblink
+      - updater
+      - persistent_notification
+      - binary_sensor
+      - sensor
