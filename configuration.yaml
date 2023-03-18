@@ -6,6 +6,10 @@ default_config:
 # http:
 #   base_url: example.duckdns.org:8123
 
+homeassistant:
+  allowlist_external_dirs:
+    - /config
+
 # Text to speech
 tts:
   - platform: google_translate
@@ -140,6 +144,19 @@ switch:
     retain: true
 
 sensor:
+  - platform: statistics
+    name: "Litres per hour"
+    entity_id: sensor.water_volume
+    state_characteristic: change
+    max_age:
+      hours: 1
+    sampling_size: 10
+    precision: 1
+
+  - platform: filesize
+    file_paths:
+      - /config/home-assistant_v2.db
+
   - platform: template
     sensors:
       water_tank_height:
@@ -223,10 +240,9 @@ sensor:
         unit_of_measurement: 'cm'
         value_template: >-
           {% set water_tank_height = states('sensor.water_tank_height') | float %}
-          {% set water_tank_sensor_error_adjustment = states('sensor.water_tank_sensor_error_adjustment') | float %}
           {% set water_level = states('sensor.water_level') | float %}
           {% set water_distance_top = states('sensor.water_distance_top') | float %}
-          {% set water_level = water_tank_height + water_tank_sensor_error_adjustment - water_distance_top %}
+          {% set water_level = water_tank_height - water_distance_top %}
           {% if water_level < 0 %}
             {{ 0.0 }}
           {% else %}
@@ -240,7 +256,8 @@ sensor:
         value_template: >-
           {% set water_tank_height = states('sensor.water_tank_height') | float %}
           {% set water_level = states('sensor.water_level') | float %}
-          {% set percentage = (water_level / water_tank_height) * 100 %}
+          {% set water_tank_sensor_error_adjustment = states('sensor.water_tank_sensor_error_adjustment') | float %}
+          {% set percentage = (water_level / (water_tank_height - water_tank_sensor_error_adjustment)) * 100 %}
           {% if percentage < 0 %}
             {{ 0.0 }}
           {% else %}
@@ -365,7 +382,7 @@ sensor:
           {% if states('sensor.water_well_pressure') == 'unknown' or states('sensor.water_tank_pressure') == 'unknown' %}
             {{ states('sensor.water_well_pressure') }}
           {% else %}
-            {{ ((water_pump_pressure + water_tank_pressure) / 2) | round(2)}}
+            {{ ((water_pump_pressure + water_tank_pressure) / 2) | round(2) }}
           {% endif %}
         icon_template: >-
           mdi:weather-cloudy-arrow-right
@@ -383,6 +400,18 @@ sensor:
       sunrise:
         value_template: "{{ state_attr('sun.sun', 'next_rising') }}"
 
+  - platform: integration
+    source: sensor.water_volume
+
+# Calculates litres per hr rate
+utility_meter:
+  water_rate:
+    source: sensor.water_volume
+    cycle: daily
+    name: "Litres Today"
+    net_consumption: True
+    offset: 00:00
+
 telegram_bot:
   - platform: polling
     api_key: !secret telegram_api_key
@@ -393,8 +422,21 @@ notify:
   - name: telegram
     platform: telegram
     chat_id: !secret telegram_allowed_chat_id
+
 # TODO
 # Change icons. Have icons that react on availability Offline and Online
 
 
 #TODO try {{ is_state('switch.source', 'on') }} instead of {% if water_tank_availability == 'on'%}
+
+recorder:
+  purge_keep_days: 7   # Keep 1 week in history after purging @ 04:12
+  commit_interval: 30   # Write to disk every 30 seconds
+  exclude:
+    domains:
+      - automation
+      - weblink
+      - updater
+      - persistent_notification
+      - media_player
+

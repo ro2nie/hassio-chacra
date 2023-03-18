@@ -54,7 +54,10 @@
   action:
     service: switch.turn_off
     entity_id: switch.water_tank_intent
-    
+
+##TODO consider adding condition if pump is FULL. 
+##This would remove the 10 second readings when the intent is ON (in case the hose was disconnected - not filling the tank)
+
 #### BELLOW 'keep tank level high' (temp in degrees. Usually 10) WATER TANK INTENT (> 80%) (BETWEEN freeze protection cut off and 'keep tank level high' degrees)
 ## When temperature is bellow 10 degrees start pump at < 81% (Keep it as full as possible! in preparation for freezing!)
 - alias: 'Switch water tank intent on when water tank is online, pump is online, the holiday mode is off, the well temperature is bellow 10'
@@ -103,6 +106,9 @@
   action:
     service: switch.turn_on
     entity_id: switch.water_tank_intent
+
+##TODO consider adding condition if pump is FULL. 
+##This would remove the 10 second readings when the intent is ON (in case the hose was disconnected - not filling the tank)
 
 #### ABOVE 10 DEGREES WATER TANK INTENT (10.00 or higher)
 ## When temperature is above 10 degrees start pump at 41%
@@ -267,7 +273,7 @@
   action:
     - service: notify.Telegram
       data:
-        message: "Water well temperature is now bellow {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C. The water pump will now pump when the water tank reaches 81% and will fill up to 95%. When the temperature goes above {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C, the water pump will resume pumping between 41% and 95%."
+        message: "Water well temperature is now bellow {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C. The pump will now keep the water tank level between 81% and 95%. If the temperature goes above {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C, the pump will keep the water tank level between 41% and 95%."
     - delay: 08:00:00
     
 # Temp above 'keep tank level high' temperature means pump on between 41% and 95%
@@ -288,7 +294,7 @@
   action:
     - service: notify.Telegram
       data:
-        message: "Water well temperature is now above {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C. The water pump will now pump when the water tank reaches 41% and will fill up to 95%. When the temperature goes bellow {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C, the water pump will resume pumping between 41% and 95%."
+        message: "Water well temperature is now above {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C. The pump will now keep the water tank level between 41% and 95%. If the temperature goes bellow {{ states('input_select.keep_tank_levels_high_cutoff_temperature') }}°C, the pump will keep the water tank level between 81% and 95%."
     - delay: 08:00:00
 
 # Frost protection alert
@@ -309,7 +315,7 @@
   action:
     - service: notify.Telegram
       data:
-        message: "Water well temperature is now bellow {{ states('input_select.frost_prevention_cutoff_temperature') }}°C (the currently set frost prevention cut off temperature). The water pump will resume working when the temperature goes above {{ states('input_select.frost_prevention_cutoff_temperature') }}°C."
+        message: "Frost protection active. The temperature is now bellow {{ states('input_select.frost_prevention_cutoff_temperature') }}°C (the currently set frost prevention cut off temperature). The water pump will resume working when the temperature goes above {{ states('input_select.frost_prevention_cutoff_temperature') }}°C."
     - delay: 08:00:00
     
 # Frost protection alert
