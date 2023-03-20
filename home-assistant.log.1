@@ -1,0 +1,55 @@
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of input_boolean is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of input_datetime is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of timer is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of input_number is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of zone is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of input_button is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of input_select is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of counter is taking over 10 seconds.
+2023-03-20 15:05:46 WARNING (MainThread) [homeassistant.setup] Setup of input_text is taking over 10 seconds.
+2023-03-20 15:05:57 WARNING (MainThread) [homeassistant.config_entries] Config entry 'shelly1-40F5201DD0DD' for shelly integration not ready yet: Timeout during device setup; Retrying in background
+2023-03-20 15:05:57 WARNING (MainThread) [homeassistant.config_entries] Config entry 'shelly1-10521CF1F305' for shelly integration not ready yet: Timeout during device setup; Retrying in background
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_percentage = states('sensor.water_percentage') | float %} {% set water_percentage_upper_level = states('input_select.water_tank_level_upper_limit_percentage') | int %} {{ water_percentage <= water_percentage_upper_level }}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_percentage = states('sensor.water_percentage') | float %} {% set water_percentage_upper_level = states('input_select.water_tank_level_upper_limit_percentage') | int %} {{ water_percentage <= water_percentage_upper_level }}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_percentage = states('sensor.water_percentage') | float %} {% set water_percentage_lower_level = states('input_select.water_tank_level_lower_limit_percentage') | int %} {{ water_percentage >= water_percentage_lower_level }}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_percentage = states('sensor.water_percentage') | float %} {% set water_percentage_lower_level = states('input_select.water_tank_level_lower_limit_percentage') | int %} {{ water_percentage >= water_percentage_lower_level }}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_tank_height = states('sensor.water_tank_height') | float %} {% set water_level = states('sensor.water_level') | float %} {% set water_distance_top = states('sensor.water_distance_top') | float %} {% set water_level = water_tank_height - water_distance_top %} {% if water_level < 0 %}
+  {{ 0.0 }}
+{% else %}
+  {{ water_level | round(2) }}
+{% endif %}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_tank_height = states('sensor.water_tank_height') | float %} {% set water_level = states('sensor.water_level') | float %} {% set water_distance_top = states('sensor.water_distance_top') | float %} {% set water_level = water_tank_height - water_distance_top %} {% if water_level < 0 %}
+  {{ 0.0 }}
+{% else %}
+  {{ water_level | round(2) }}
+{% endif %}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_tank_height = states('sensor.water_tank_height') | float %} {% set water_level = states('sensor.water_level') | float %} {% set water_distance_top = states('sensor.water_distance_top') | float %} {% set water_level = water_tank_height - water_distance_top %} {% if water_level < 0 %}
+  {{ 0.0 }}
+{% else %}
+  {{ water_level | round(2) }}
+{% endif %}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_tank_height = states('sensor.water_tank_height') | float %} {% set water_level = states('sensor.water_level') | float %} {% set water_distance_top = states('sensor.water_distance_top') | float %} {% set water_level = water_tank_height - water_distance_top %} {% if water_level < 0 %}
+  {{ 0.0 }}
+{% else %}
+  {{ water_level | round(2) }}
+{% endif %}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set lowest_temperature = states('sensor.temperature_lowest_tank_or_pump') | float %} {% set frost_prevention_cutoff_temperature = states('input_select.frost_prevention_cutoff_temperature') | float %} {% if states('sensor.temperature_lowest_tank_or_pump') == 'unknown' %}
+  {{ states('sensor.temperature_lowest_tank_or_pump') }}
+{% elif lowest_temperature < frost_prevention_cutoff_temperature %}
+  {{ True }}
+{% else %}
+  {{ False }}
+{% endif %}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set lowest_temperature = states('sensor.temperature_lowest_tank_or_pump') | float %} {% set frost_prevention_cutoff_temperature = states('input_select.frost_prevention_cutoff_temperature') | float %} {% if states('sensor.temperature_lowest_tank_or_pump') == 'unknown' %}
+  {{ states('sensor.temperature_lowest_tank_or_pump') }}
+{% elif lowest_temperature < frost_prevention_cutoff_temperature %}
+  {{ True }}
+{% else %}
+  {{ False }}
+{% endif %}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:06:22 WARNING (MainThread) [homeassistant.helpers.template] Template warning: 'float' got invalid input 'unknown' when rendering template '{% set water_tank_height = states('sensor.water_tank_height') | float %} {% set water_level = states('sensor.water_level') | float %} {% set water_distance_top = states('sensor.water_distance_top') | float %} {% set water_level = water_tank_height - water_distance_top %} {% if water_level < 0 %}
+  {{ 0.0 }}
+{% else %}
+  {{ water_level | round(2) }}
+{% endif %}' but no default was specified. Currently 'float' will return '0', however this template will fail to render in Home Assistant core 2022.1
+2023-03-20 15:08:49 ERROR (MainThread) [homeassistant.components.hassio.handler] Timeout on /homeassistant/restart request
