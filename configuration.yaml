@@ -1,4 +1,3 @@
-
 # Configure a default setup of Home Assistant (frontend, api, etc)
 default_config:
 
@@ -133,44 +132,87 @@ input_select:
       - 7
     icon: mdi:temperature
 
-binary_sensor:
-  - platform: mqtt
-    name: "Water pump availability"
-    state_topic: "water-pump/availability"
-    payload_on: "ON"
-    expire_after: 120
-  - platform: mqtt
-    name: "Water tank availability"
-    state_topic: "water-tank/availability"
-    payload_on: "ON"
-    expire_after: 120
-  - platform: template
-    sensors:
-      under_water_percentage_upper_limit:
-        friendly_name: "Water percentage under upper limit"
-        value_template: >-
-          {% set water_percentage = states('sensor.water_percentage') | float %}
-          {% set water_percentage_upper_level = states('input_select.water_tank_level_upper_limit_percentage') | int %}
-          {{ water_percentage <= water_percentage_upper_level }}
-  - platform: template
-    sensors:
-      over_water_percentage_lower_limit:
-        friendly_name: "Water percentage over lower limit"
-        value_template: >-
-          {% set water_percentage = states('sensor.water_percentage') | float %}
-          {% set water_percentage_lower_level = states('input_select.water_tank_level_lower_limit_percentage') | int %}
-          {{ water_percentage >= water_percentage_lower_level }}
+mqtt:
+  switch:
+    - name: "Water tank intent"
+      state_topic: "water-tank/status"
+      command_topic: "water-tank/status"
+      payload_on: "ON"
+      payload_off: "OFF"
+      state_on: "ON"
+      state_off: "OFF"
+      retain: true
 
-switch:
-  - platform: mqtt
-    name: "Water tank intent"
-    state_topic: "water-tank/status"
-    command_topic: "water-tank/status"
-    payload_on: "ON"
-    payload_off: "OFF"
-    state_on: "ON"
-    state_off: "OFF"
-    retain: true
+  binary_sensor:
+    - name: "Water pump availability"
+      state_topic: "water-pump/availability"
+      payload_on: "ON"
+      expire_after: 120
+
+    - name: "Water tank availability"
+      state_topic: "water-tank/availability"
+      payload_on: "ON"
+      expire_after: 120
+
+  sensor:
+    # FULL or EMPTY
+    - name: "Water well status"
+      state_topic: "water-well/status"
+
+    # ON or OFF (ON is pumping. OFF is for not pumping)
+    - name: "Water pump status"
+      state_topic: "water-pump/status"
+
+    ## WEATHER well/pump
+    - name: "Water well temperature"
+      state_topic: "water-well/weather"
+      unit_of_measurement: '°C'
+      value_template: "{{ value_json.temperature }}"
+
+    - name: "Water well relative humidity"
+      state_topic: "water-well/weather"
+      unit_of_measurement: '%'
+      value_template: "{{ value_json.humidity | round(2) }}"
+
+    - name: "Water well pressure"
+      state_topic: "water-well/weather"
+      unit_of_measurement: 'hPa'
+      value_template: "{{ value_json.pressure | round(2) }}"
+
+    - name: "Water well altitude"
+      state_topic: "water-tank/weather"
+      unit_of_measurement: 'm'
+      value_template: "{{ value_json.altitude | round(2) }}"
+
+    ## WEATHER tank
+    - name: "Water distance top"
+      state_topic: "water-tank/level"
+      unit_of_measurement: 'cm'
+
+    - name: "Water tank temperature"
+      state_topic: "water-tank/weather"
+      unit_of_measurement: '°C'
+      value_template: "{{ value_json.temperature }}"
+
+    - name: "Water tank relative humidity"
+      state_topic: "water-tank/weather"
+      unit_of_measurement: '%'
+      value_template: "{{ value_json.humidity | round(2) }}"
+
+    - name: "Water tank pressure"
+      state_topic: "water-tank/weather"
+      unit_of_measurement: 'hPa'
+      value_template: "{{ value_json.pressure | round(2) }}"
+
+    - name: "Water tank altitude"
+      state_topic: "water-tank/weather"
+      unit_of_measurement: 'm'
+      value_template: "{{ value_json.altitude | round(2) }}"
+
+    - name: "Water well recovery countdown"
+      state_topic: "water-well/recovery-countdown"
+      unit_of_measurement: 'min'
+      icon: mdi:clock
 
 sensor:
   - platform: statistics
@@ -186,270 +228,113 @@ sensor:
     file_paths:
       - /config/home-assistant_v2.db
 
-  - platform: template
-    sensors:
-      water_tank_height:
-        value_template: !secret water_tank_height
-      water_tank_sensor_error_adjustment:
-        value_template: !secret water_tank_sensor_error_adjustment
-      water_tank_cylinder_height:
-        value_template: !secret water_tank_cylinder_height
-      water_tank_cylinder_radius:
-        value_template: !secret water_tank_cylinder_radius
-      water_tank_cone_angle:
-        value_template: !secret water_tank_cone_angle
+input_text:
+  water_tank_height:
+    initial: !secret water_tank_height
+  water_tank_sensor_error_adjustment:
+    initial: !secret water_tank_sensor_error_adjustment
+  water_tank_cylinder_height:
+    initial: !secret water_tank_cylinder_height
+  water_tank_cylinder_radius:
+    initial: !secret water_tank_cylinder_radius
+  water_tank_cone_angle:
+    initial: !secret water_tank_cone_angle
+  water_tank_cone_angle:
+    initial: !secret water_tank_cone_angle
   
-  - platform: mqtt
-    name: "Water well status"
-    state_topic: "water-well/status"
-  
-  - platform: mqtt
-    name: "Water pump status"
-    state_topic: "water-pump/status"
-  
-  - platform: mqtt
-    name: "Water distance top"
-    state_topic: "water-tank/level"
-    unit_of_measurement: 'cm'
+template:
+  - binary_sensor:
+    - name: under_water_percentage_upper_limit
+      state: >
+        {% set water_percentage = states('sensor.water_percentage') | float %}
+        {% set water_percentage_upper_level = states('input_select.water_tank_level_upper_limit_percentage') | int %}
+        {{ water_percentage <= water_percentage_upper_level }}
+    - name: over_water_percentage_lower_limit
+      state: >
+        {% set water_percentage = states('sensor.water_percentage') | float %}
+        {% set water_percentage_lower_level = states('input_select.water_tank_level_lower_limit_percentage') | int %}
+        {{ water_percentage >= water_percentage_lower_level }}
+  - sensor:
+    - name: "Water level"
+      unit_of_measurement: "cm"
+      state: >
+        {% set water_tank_height = states('input_text.water_tank_height') | float(default=0) %}
+        {% set water_distance_top = states('sensor.water_distance_top') | float(default=0) %}
+        {% set water_level = water_tank_height - water_distance_top %}
+        {% if water_level < 0 %}
+          {{ 0.0 }}
+        {% else %}
+          {{ water_level | round(2) }}
+        {% endif %}
+      icon: mdi:tape-measure
+    - name: "Water percentage"
+      unit_of_measurement: "%"
+      state: >
+        {% set water_tank_height = states('input_text.water_tank_height') | float(default=175) %}
+        {% set water_level = states('sensor.water_level') | float(default=175) %}
+        {% set water_tank_sensor_error_adjustment = states('input_text.water_tank_sensor_error_adjustment') | float %}
+        {% set percentage = (water_level / (water_tank_height - water_tank_sensor_error_adjustment)) * 100 %}
+        {% if percentage < 0 %}
+          {{ 0.0 }}
+        {% elif percentage > 100 %}
+          {{ 100.0 }}
+        {% else %}
+          {{ percentage | round(2) }}
+        {% endif %}
+      icon: mdi:water-percent
+    - name: "Water volume"
+      unit_of_measurement: "litres"
+      state: >
+        {% set water_level = states('sensor.water_level') | float(default=175) %}
+        {% set water_tank_cylinder_height = states('input_text.water_tank_cylinder_height') | float %}
+        {% set water_tank_cylinder_radius = states('input_text.water_tank_cylinder_radius') | float %}
+        {% if water_level <= water_tank_cylinder_height %}
+          {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_level %}
+          {{ (cylinder_volume / 1000) | round(2) }}
+        {% else %}
+          {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_tank_cylinder_height %}
+          {% set water_tank_cone_angle = states('input_text.water_tank_cone_angle') | float %}
+          {% set water_height_in_cone = water_level - water_tank_cylinder_height %}
+          {% set tan_from_degrees = tan((pi / 180) * water_tank_cone_angle) %}
+          {% set water_level_radius_in_cone = water_tank_cylinder_radius - (water_height_in_cone / tan_from_degrees) %}
+          {% set volume_cone = (1/3 * pi * (water_tank_cylinder_radius ** 2 + water_tank_cylinder_radius + water_level_radius_in_cone + water_level_radius_in_cone ** 2) * water_height_in_cone) %}
+          {{ ((cylinder_volume + volume_cone) / 1000) | round(2)}}
+        {% endif %}
+      icon: mdi:water
+    - name: "Water tank availability state"
+      state: >
+        {% set water_tank_availability = states('binary_sensor.water_tank_availability') %}
+        {% if water_tank_availability == 'on' %}
+          Online
+        {% else %}
+          Offline
+        {% endif %}
+    - name: "Water pump availability state"
+      state: >
+        {% set water_pump_availability = states('binary_sensor.water_pump_availability') %}
+        {% if water_pump_availability == 'on' %}
+          Online
+        {% else %}
+          Offline
+        {% endif %}
+    - name: water_pump_temperature_bellow_frost_prevention_cutoff
+      state: >
+        {% set current_temperature = state_attr('weather.pinos_del_rey', 'temperature') | float(default=20) %}
+        {% set frost_prevention_cutoff_temperature = states('input_select.frost_prevention_cutoff_temperature') | float %}
+        {% if current_temperature < frost_prevention_cutoff_temperature %}
+          {{ True }}
+        {% else %}
+          {{ False }}
+        {% endif %}
+      icon: mdi:thermometer
+    - name: "Sun angle"
+      unit_of_measurement: "degrees"
+      state: "{{ state_attr('sun.sun', 'elevation') }}"
+    - name: "Sunrise"
+      state: "{{ state_attr('sun.sun', 'next_rising') }}"
 
-  ## WHEATHER well/pump
-  - platform: mqtt
-    name: "Water well temperature"
-    state_topic: "water-well/weather"
-    unit_of_measurement: '°C'
-    value_template: "{{ value_json.temperature }}"
-
-  - platform: mqtt
-    name: "Water well relative humidity"
-    state_topic: "water-well/weather"
-    unit_of_measurement: '%'
-    value_template: "{{ value_json.humidity | round(2) }}"
-
-  - platform: mqtt
-    name: "Water well pressure"
-    state_topic: "water-well/weather"
-    unit_of_measurement: 'hPa'
-    value_template: "{{ value_json.pressure | round(2) }}"
-
-  - platform: mqtt
-    name: "Water well altitude"
-    state_topic: "water-tank/weather"
-    unit_of_measurement: 'm'
-    value_template: "{{ value_json.altitude | round(2) }}"
-    
-  ## WHEATHER tank
-  - platform: mqtt
-    name: "Water tank temperature"
-    state_topic: "water-tank/weather"
-    unit_of_measurement: '°C'
-    value_template: "{{ value_json.temperature }}"
-
-  - platform: mqtt
-    name: "Water tank relative humidity"
-    state_topic: "water-tank/weather"
-    unit_of_measurement: '%'
-    value_template: "{{ value_json.humidity | round(2) }}"
-
-  - platform: mqtt
-    name: "Water tank pressure"
-    state_topic: "water-tank/weather"
-    unit_of_measurement: 'hPa'
-    value_template: "{{ value_json.pressure | round(2) }}"
-
-  - platform: mqtt
-    name: "Water tank altitude"
-    state_topic: "water-tank/weather"
-    unit_of_measurement: 'm'
-    value_template: "{{ value_json.altitude | round(2) }}"
-
-  - platform: template
-    sensors:
-      water_level:
-        friendly_name: "Water level"
-        unit_of_measurement: 'cm'
-        value_template: >-
-          {% set water_tank_height = states('sensor.water_tank_height') | float %}
-          {% set water_level = states('sensor.water_level') | float %}
-          {% set water_distance_top = states('sensor.water_distance_top') | float %}
-          {% set water_level = water_tank_height - water_distance_top %}
-          {% if water_level < 0 %}
-            {{ 0.0 }}
-          {% else %}
-            {{ water_level | round(2) }}
-          {% endif %}
-        icon_template: >-
-          mdi:tape-measure
-      water_percentage:
-        friendly_name: "Water percentage"
-        unit_of_measurement: '%'
-        value_template: >-
-          {% if is_state('sensor.water_tank_height','unknown') %}
-            {{ states('sensor.water_percentage') }}
-          {% endif %}
-          {% set water_tank_height = states('sensor.water_tank_height') | float %}
-          {% set water_level = states('sensor.water_level') | float %}
-          {% set water_tank_sensor_error_adjustment = states('sensor.water_tank_sensor_error_adjustment') | float %}
-          {% set percentage = (water_level / (water_tank_height - water_tank_sensor_error_adjustment)) * 100 %}
-          {% if percentage < 0 %}
-            {{ 0.0 }}
-          {% else %}
-            {{ percentage | round(2) }}
-          {% endif %}
-        icon_template: >-
-          mdi:water-percent
-      water_volume:
-        friendly_name: "Water volume"
-        unit_of_measurement: 'litres'
-        value_template: >-
-          {% set water_level = states('sensor.water_level') | float %}
-          {% set water_tank_cylinder_height = states('sensor.water_tank_cylinder_height') | float %}
-          {% set water_tank_cylinder_radius = states('sensor.water_tank_cylinder_radius') | float %}
-          {% if water_level <= water_tank_cylinder_height %}
-            {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_level %}
-            {{ (cylinder_volume / 1000) | round(2) }}
-          {% else %}
-            {% set cylinder_volume = pi * water_tank_cylinder_radius ** 2 * water_tank_cylinder_height %}
-            {% set water_tank_cone_angle = states('sensor.water_tank_cone_angle') | float %}
-            {% set water_height_in_cone = water_level - water_tank_cylinder_height %}
-            {% set tan_from_degrees = tan((pi / 180) * water_tank_cone_angle) %}
-            {% set water_level_radius_in_cone = water_tank_cylinder_radius - (water_height_in_cone / tan_from_degrees) %}
-            {% set volume_cone = (1/3 * pi * (water_tank_cylinder_radius ** 2 + water_tank_cylinder_radius + water_level_radius_in_cone + water_level_radius_in_cone ** 2) * water_height_in_cone) %}
-            {{ ((cylinder_volume + volume_cone) / 1000) | round(2)}}
-          {% endif %}
-        icon_template: >-
-          mdi:water
-      water_tank_availability_display:
-        friendly_name: "Water tank availability"
-        value_template: >-
-          {% set water_tank_availability = states('binary_sensor.water_tank_availability') %}
-          {% if water_tank_availability == 'on' %}
-            Online
-          {% else %}
-            Offline
-          {% endif %}
-      water_pump_availability_display:
-        friendly_name: "Water pump availability"
-        value_template: >-
-          {% set water_pump_availability = states('binary_sensor.water_pump_availability') %}
-          {% if water_pump_availability == 'on' %}
-            Online
-          {% else %}
-            Offline
-          {% endif %}
-
-      todo_under_water_percentage_upper_limit:
-        friendly_name: "Water percentage under upper limit"
-        value_template: >-
-          {% set water_percentage = states('sensor.water_percentage') | float %}
-          {% set water_percentage_upper_level = states('input_select.water_tank_level_upper_limit_percentage') | int %}
-          {{ water_percentage <= water_percentage_upper_level }}
-  
-      todo_over_water_percentage_lower_limit:
-        friendly_name: "Water percentage over lower limit"
-        value_template: >-
-          {% set water_percentage = states('sensor.water_percentage') | float %}
-          {% set water_percentage_lower_level = states('input_select.water_tank_level_lower_limit_percentage') | int %}
-          {{ water_percentage >= water_percentage_lower_level }}
-
-    #   water_pump_temperature_bellow_keep_tank_level_high:
-    #     friendly_name: "Water pump temperature bellow the 'keep tank level high' temperature"
-    #     value_template: >-
-    #       {% set lowest_temperature = states('sensor.temperature_lowest_tank_or_pump') | float %}
-    #       {% set keep_tank_levels_high_cutoff_temperature = states('input_select.keep_tank_levels_high_cutoff_temperature') | float %}
-    #       {% if states('sensor.temperature_lowest_tank_or_pump') == 'unknown' %}
-    #         {{ states('sensor.temperature_lowest_tank_or_pump') }}
-    #       {% elif lowest_temperature < keep_tank_levels_high_cutoff_temperature %}
-    #         {{ True }}
-    #       {% else %}
-    #         {{ False }}
-    #       {% endif %}
-    #     icon_template: >-
-    #       mdi:thermometer
-
-      water_pump_temperature_bellow_frost_prevention_cutoff:
-        friendly_name: "Water pump temperature bellow frost prevention cut off temperature"
-        value_template: >-
-          {% set lowest_temperature = states('sensor.temperature_lowest_tank_or_pump') | float %}
-          {% set frost_prevention_cutoff_temperature = states('input_select.frost_prevention_cutoff_temperature') | float %}
-          {% if states('sensor.temperature_lowest_tank_or_pump') == 'unknown' %}
-            {{ states('sensor.temperature_lowest_tank_or_pump') }}
-          {% elif lowest_temperature < frost_prevention_cutoff_temperature %}
-            {{ True }}
-          {% else %}
-            {{ False }}
-          {% endif %}
-        icon_template: >-
-          mdi:thermometer
-      temperature_average_tank_pump:
-        friendly_name: "Averaged temperature tank/pump"
-        unit_of_measurement: '°C'
-        value_template: >-
-          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
-          {% set water_tank_temperature = states('sensor.water_tank_temperature') | float %}
-          {% if states('sensor.water_well_temperature') == 'unknown' or states('sensor.water_tank_temperature') == 'unknown' %}
-            {{ states('sensor.water_well_temperature') }}
-          {% else %}
-            {{ ((water_pump_temperature + water_tank_temperature) / 2) | round(2)}}
-          {% endif %}
-        icon_template: >-
-          mdi:thermometer
-      temperature_lowest_tank_or_pump:
-        friendly_name: "Lowest temperature tank/pump"
-        unit_of_measurement: '°C'
-        value_template: >-
-          {% set water_pump_temperature = states('sensor.water_well_temperature') | float %}
-          {% set water_tank_temperature = states('sensor.water_tank_temperature') | float %}
-          {% if states('sensor.water_well_temperature') == 'unknown' or states('sensor.water_tank_temperature') == 'unknown' %}
-            {{ states('sensor.water_well_temperature') }}
-          {% elif water_pump_temperature < water_tank_temperature %}
-            {{ water_pump_temperature }}
-          {% else %}
-            {{ water_tank_temperature }}
-          {% endif %}
-        icon_template: >-
-          mdi:thermometer
-      humidity_average_tank_pump:
-        friendly_name: "Averaged relative humidity tank/pump"
-        unit_of_measurement: '%'
-        value_template: >-
-          {% set water_pump_humidity = states('sensor.water_well_relative_humidity') | float %}
-          {% set water_tank_humidity = states('sensor.water_tank_relative_humidity') | float %}
-          {% if states('sensor.water_well_relative_humidity') == 'unknown' or states('sensor.water_tank_relative_humidity') == 'unknown' %}
-            {{ states('sensor.water_well_relative_humidity') }}
-          {% else %}
-            {{ ((water_pump_humidity + water_tank_humidity) / 2) | round(2)}}
-          {% endif %}
-        icon_template: >-
-          mdi:percent
-      pressure_average_tank_pump:
-        friendly_name: "Averaged pressure tank/pump"
-        unit_of_measurement: 'hPa'
-        value_template: >-
-          {% set water_pump_pressure = states('sensor.water_well_pressure') | float %}
-          {% set water_tank_pressure = states('sensor.water_tank_pressure') | float %}
-          {% if states('sensor.water_well_pressure') == 'unknown' or states('sensor.water_tank_pressure') == 'unknown' %}
-            {{ states('sensor.water_well_pressure') }}
-          {% else %}
-            {{ ((water_pump_pressure + water_tank_pressure) / 2) | round(2) }}
-          {% endif %}
-        icon_template: >-
-          mdi:weather-cloudy-arrow-right
-  - platform: mqtt
-    name: "Water well recovery countdown"
-    state_topic: "water-well/recovery-countdown"
-    unit_of_measurement: 'min'
-    icon: mdi:clock
-  - platform: template
-    sensors:
-      solar_angle:
-        friendly_name: "Sun angle"
-        unit_of_measurement: 'degrees'
-        value_template: "{{ state_attr('sun.sun', 'elevation') }}"
-      sunrise:
-        value_template: "{{ state_attr('sun.sun', 'next_rising') }}"
-
-  - platform: integration
-    source: sensor.water_volume
+  # - platform: integration
+  #   source: sensor.water_volume
 
 # Calculates litres per hr rate
 utility_meter:

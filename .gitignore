@@ -1,8 +1,10 @@
-.storage
+.storage/
 .cloud
-deps
-tts
+blueprints/
+deps/
+tts/
 secrets.yaml
 *.log
+*.log*
 *.db*
 .HA_VERSION
