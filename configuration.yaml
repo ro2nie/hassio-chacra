@@ -122,6 +122,14 @@ input_select:
   frost_prevention_cutoff_temperature:
     name: Set minimum operational temperature (frost prevention)
     options:
+      - -8
+      - -7
+      - -6
+      - -5
+      - -4
+      - -3
+      - -2
+      - -1
       - 0
       - 1
       - 2
@@ -155,13 +163,18 @@ mqtt:
       expire_after: 120
 
   sensor:
+    - name: "homeassistant status"
+      state_topic: "homeassistant/status"
+  
     # FULL or EMPTY
     - name: "Water well status"
       state_topic: "water-well/status"
+      value_template: "{{ value if value is defined else this.state }}"
 
     # ON or OFF (ON is pumping. OFF is for not pumping)
     - name: "Water pump status"
       state_topic: "water-pump/status"
+      value_template: "{{ value if value is defined else this.state }}"
 
     ## WEATHER well/pump
     - name: "Water well temperature"
@@ -188,11 +201,12 @@ mqtt:
     - name: "Water distance top"
       state_topic: "water-tank/level"
       unit_of_measurement: 'cm'
+      value_template: "{{ value if value is defined else this.state }}"
 
     - name: "Water tank temperature"
       state_topic: "water-tank/weather"
       unit_of_measurement: '°C'
-      value_template: "{{ value_json.temperature }}"
+      value_template: "{{ value_json.temperature if value_json.temperature is defined else this.state }}"
 
     - name: "Water tank relative humidity"
       state_topic: "water-tank/weather"
@@ -212,6 +226,7 @@ mqtt:
     - name: "Water well recovery countdown"
       state_topic: "water-well/recovery-countdown"
       unit_of_measurement: 'min'
+      value_template: "{{ value if value is defined else this.state }}"
       icon: mdi:clock
 
 sensor:
@@ -237,8 +252,6 @@ input_text:
     initial: !secret water_tank_cylinder_height
   water_tank_cylinder_radius:
     initial: !secret water_tank_cylinder_radius
-  water_tank_cone_angle:
-    initial: !secret water_tank_cone_angle
   water_tank_cone_angle:
     initial: !secret water_tank_cone_angle
   
