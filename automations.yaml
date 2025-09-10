@@ -3,7 +3,7 @@
 - alias: 'Restart water tank and water well boards when homeassistant starts'
   trigger:
     - platform: homeassistant
-      event: start
+      event: stop
   action:
     - service: mqtt.publish
       data:
@@ -13,6 +13,23 @@
       data:
         topic: "water-tank/restart"
         payload: on
+
+- alias: 'mqtt becomes available'
+  trigger:
+    platform: state
+    entity_id: sensor.homeassistant_state
+    to: 'online'
+  action:
+  - service: mqtt.publish
+    data:
+      topic: "water-tank/interval-not-pumping"
+      payload: "{{ 1 }}"
+  - delay:
+        seconds: 20
+  - service: mqtt.publish
+    data:
+      topic: "water-tank/interval-not-pumping"
+      payload: "{{ states('input_select.water_tank_level_sensor_interval_not_pumping') }}"
 
 ### STOP TANK INTENT WHEN TANK GOES OFFLINE
 - alias: 'Switch water tank intent off when water tank goes offline'
